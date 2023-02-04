@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Brick\Browser;
 
 use Brick\Browser\Client\Client;
-use Brick\Browser\Listener\MessageListener;
 use Brick\Http\Request;
 use Brick\Http\Response;
-use Brick\Http\RequestHandler;
 
 /**
  * A simple browser.

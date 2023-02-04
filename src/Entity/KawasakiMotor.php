@@ -4,12 +4,14 @@ namespace App\Entity;
 
 class KawasakiMotor extends BaseEntity
 {
-    private ?string $type;
-    private ?string $year;
-    private ?string $modell;
-    private ?string $vin;
-    private ?string $motor;
-    private ?string $country;
+    private ?string $type = null;
+    private ?string $year = null;
+    private ?string $model = null;
+    private ?string $vin = null;
+    private ?string $engine = null;
+    private ?string $country = null;
+    private ?array $colors = null;
+    private ?string $catalog = null;
 
     public function getType(): ?int
     {
@@ -33,14 +35,14 @@ class KawasakiMotor extends BaseEntity
         return $this;
     }
 
-    public function getModell(): ?string
+    public function getModel(): ?string
     {
-        return $this->modell;
+        return $this->model;
     }
 
-    public function setModell(?string $modell): self
+    public function setModel(?string $model): self
     {
-        $this->modell = $modell;
+        $this->model = $model;
         return $this;
     }
 
@@ -55,14 +57,14 @@ class KawasakiMotor extends BaseEntity
         return $this;
     }
 
-    public function getMotor(): ?string
+    public function getEngine(): ?string
     {
-        return $this->motor;
+        return $this->engine;
     }
 
-    public function setMotor(?string $motor): self
+    public function setEngine(?string $engine): self
     {
-        $this->motor = $motor;
+        $this->engine = $engine;
         return $this;
     }
 
@@ -74,6 +76,28 @@ class KawasakiMotor extends BaseEntity
     public function setCountry(?string $country): self
     {
         $this->country = $country;
+        return $this;
+    }
+
+    public function getColors(): ?array
+    {
+        return $this->colors;
+    }
+
+    public function setColors(?array $colors): self
+    {
+        $this->colors = $colors;
+        return $this;
+    }
+
+    public function getCatalog(): ?string
+    {
+        return $this->catalog;
+    }
+
+    public function setCatalog(?string $catalog): self
+    {
+        $this->catalog = $catalog;
         return $this;
     }
 }

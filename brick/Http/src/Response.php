@@ -93,8 +93,8 @@ class Response extends Message
 
         [$line, $protocolVersion, $statusCode] = $matches;
 
-        $responseObject->withProtocolVersion($protocolVersion);
-        $responseObject->withStatusCode((int) $statusCode);
+        $responseObject->setProtocolVersion($protocolVersion);
+        $responseObject->setStatusCode((int) $statusCode);
 
         $response = substr($response, strlen($line));
 
@@ -187,7 +187,7 @@ class Response extends Message
     public function withStatusCode(int $statusCode, ?string $reasonPhrase = null): Response
     {
         $that = clone $this;
-        $that->setStatusCode($statusCode);
+        $that->setStatusCode($statusCode, $reasonPhrase);
 
         return $that;
     }
