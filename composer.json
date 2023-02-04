@@ -1,0 +1,13 @@
+{
+    "require": {
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/",
+            "Brick\\Browser\\": "brick/Browser/src",
+            "Brick\\Http\\": "brick/Http/src",
+            "Brick\\Std\\": "brick/Std/src"
+        }
+    }
+}
