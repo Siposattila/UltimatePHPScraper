@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+    php:
+        container_name: php
+        command: bash -c "composer install --no-cache && while true; do sleep 1; done;"
+        build:
+            context: .
+            dockerfile: ./.docker/php/Dockerfile
+        restart: always
+        volumes:
+            - ./brick:/brick
+            - ./public:/public
+            - ./src:/src
+            - ./vendor:/vendor
+            - ./.env:/.env
+            - ./bootstrap.php:/bootstrap.php
+            - ./composer.json:/composer.json
+            - ./composer.lock:/composer.lock
+    db:
+        container_name: db
+        image: mariadb:10.5.8
+        command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_hungarian_ci
+        restart: always
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: 123456
+            MYSQL_DATABASE: ultimate_php_scraper
+            MYSQL_USER: root
+        volumes:
+            - ./.docker/db/:/docker-entrypoint-initdb.d
+            - ./.docker/db:/var/lib/mysql
+    phpmyadmin:
+        container_name: phpmyadmin
+        image: phpmyadmin:latest
+        restart: always
+        ports:
+            - "8001:80"
+        depends_on:
+            - db
+        environment:
+            - PMA_HOST=db
+            - PMA_PORT=3306
+            - PMA_USER=root
+            - PMA_PASSWORD=123456
