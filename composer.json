@@ -3,7 +3,9 @@
         "vlucas/phpdotenv": "^5.5",
         "symfony/css-selector": "^6.2",
         "ext-dom": "*",
-        "php": "^8.0"
+        "php": "^8.0",
+        "symfony/serializer": "^6.2",
+        "symfony/property-access": "^6.2"
     },
     "autoload": {
         "psr-4": {

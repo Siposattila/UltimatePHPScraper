@@ -2,18 +2,35 @@
 
 namespace App\ObjectManager;
 
-use App\Entity\BaseEntity;
-
+/**
+ * @template T
+ * @template-extends \App\Entity\BaseEntity
+ */
 class ObjectManager
 {
-    /** @var \App\Entity\BaseEntity[] $objects */
-    private array $objects;
+    /**
+     * @var T[] $objects
+     */
+    private $objects;
 
-    protected function find(int $id): mixed
+    /**
+     * @return T[]
+     */
+    public function all()
     {
-        // FIXME: if the given id is smaller then the current id then stop
+        return $this->objects;
+    }
+
+    /**
+     * @return T|null
+     */
+    public function find(int $id)
+    {
         $i = 0;
         while($i < count($this->objects) && $this->objects[$i]->getId() != $id) {
+            if ($this->objects[$i]->getId() > $id) {
+                $i = count($this->objects);
+            }
             $i++;
         }
 
@@ -21,26 +38,40 @@ class ObjectManager
             return $this->objects[$i];
         }
 
-        return false;
+        return null;
     }
 
-    protected function findBy(array $criteria): array
+    /**
+     * @return T[]
+     */
+    public function findBy(array $criteria)
     {
-        // return false;
+        // TODO: implement
         return [];
     }
 
-    protected function findOneBy(): mixed
+    /**
+     * @return T
+     */
+    public function findOneBy(array $criteria)
     {
         // TODO: implement
     }
 
-    protected function persist(BaseEntity $entity): void
+    /**
+     * @param T $entity
+     * @return void
+     */
+    public function persist($entity)
     {
         $this->objects[] = $entity;
     }
 
-    protected function remove(BaseEntity $entity): void
+    /**
+     * @param T $entity
+     * @return void
+     */
+    public function remove($entity): void
     {
         $i = 0;
         while($i < count($this->objects) && $this->objects[$i]->getId() != $entity->getId()) {

@@ -12,8 +12,9 @@ class KawasakiMotor extends BaseEntity
     private ?string $country = null;
     private ?array $colors = null;
     private ?string $catalog = null;
+    private ?string $vehicleType = null;
 
-    public function getType(): ?int
+    public function getType(): ?string
     {
         return $this->type;
     }
@@ -98,6 +99,17 @@ class KawasakiMotor extends BaseEntity
     public function setCatalog(?string $catalog): self
     {
         $this->catalog = $catalog;
+        return $this;
+    }
+
+    public function getVehicleType(): ?string
+    {
+        return $this->vehicleType;
+    }
+
+    public function setVehicleType(?string $vehicleType): self
+    {
+        $this->vehicleType = $vehicleType;
         return $this;
     }
 }

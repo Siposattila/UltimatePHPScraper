@@ -286,7 +286,7 @@ class Browser extends SearchContext
      *
      * @return ResponseParser
      */
-    public function ajax(string $method, string $url, $data = null, array $headers = []) : ResponseParser
+    public function ajax(string $method, string $url, string|array|object $data = null, array $headers = []) : ResponseParser
     {
         if (is_array($data) || is_object($data)) {
             $data = http_build_query($data);

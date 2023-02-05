@@ -2,6 +2,7 @@
 
 namespace Brick\Browser\RequestHandler;
 
+use App\Logger\Logger;
 use Brick\Http\Request;
 use Brick\Http\RequestHandler;
 use Brick\Http\Response;
@@ -33,8 +34,10 @@ class NetworkHandler implements RequestHandler
         if ($request->isMethod("POST")) {
             $options[CURLOPT_POST] = true;
             $options[CURLOPT_POSTFIELDS] = http_build_query($request->getPost());
+            Logger::debug(urldecode(http_build_query($request->getPost())), false);
         }
 
+        Logger::info($request->getUrl());
         $ch = curl_init($request->getUrl());
         curl_setopt_array($ch, $options);
         $response = curl_exec($ch);
