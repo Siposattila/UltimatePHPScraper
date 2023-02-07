@@ -2,27 +2,38 @@
 
 namespace App\ObjectManager;
 
+use App\Constant\ObjectManagerConstant;
+use App\DatabaseManager\DatabaseManager;
+
 /**
- * @template T
- * @template-extends \App\Entity\BaseEntity
+ * @template T of object
  */
 class ObjectManager
 {
     /**
-     * @var T[] $objects
+     * @psalm-var class-string<T>
      */
-    private $objects;
+    private string $entityClass;
 
     /**
-     * @return T[]
+     * @var object[] $objects
+     * @psalm-var list<T>
      */
-    public function all()
+    private $objects;
+    private array $notFlushedObjects;
+    private DatabaseManager $databaseManager;
+
+    public function __construct(string $entityClass)
     {
-        return $this->objects;
+        $this->entityClass = $entityClass;
+        $this->databaseManager = new DatabaseManager();
+
+        $this->objects = $this->findAll();
     }
 
     /**
-     * @return T|null
+     * @return object|null
+     * @psalm-return ?T
      */
     public function find(int $id)
     {
@@ -42,36 +53,54 @@ class ObjectManager
     }
 
     /**
-     * @return T[]
+     * @return object|null
+     * @psalm-return ?T
      */
-    public function findBy(array $criteria)
+    public function findOneBy(array $criteria, array $orderBy = null)
+    {
+        // TODO: implement
+    }
+
+    /**
+     * @psalm-return list<T>
+     */
+    public function findAll()
+    {
+        return $this->findBy([]);
+    }
+
+    /**
+     * @return object[]
+     * @psalm-return list<T>
+     */
+    public function findBy(array $criteria, array $orderBy = null, int $limit = null)
     {
         // TODO: implement
         return [];
     }
 
     /**
-     * @return T
-     */
-    public function findOneBy(array $criteria)
-    {
-        // TODO: implement
-    }
-
-    /**
-     * @param T $entity
+     * @param object $entity
+     * @psalm-param T
+     * 
      * @return void
      */
     public function persist($entity)
     {
         $this->objects[] = $entity;
+        $this->notFlushedObjects[] = [
+            "index" => count($this->objects) - 1,
+            "action" => ObjectManagerConstant::OBJECT_MANAGER_PERSIST
+        ];
     }
 
     /**
-     * @param T $entity
+     * @param object $entity
+     * @psalm-param T
+     * 
      * @return void
      */
-    public function remove($entity): void
+    public function remove($entity)
     {
         $i = 0;
         while($i < count($this->objects) && $this->objects[$i]->getId() != $entity->getId()) {
@@ -79,7 +108,29 @@ class ObjectManager
         }
 
         if ($i < count($this->objects)) {
+            $this->notFlushedObjects[] = [
+                "index" => $this->objects[$i]->getId(),
+                "action" => ObjectManagerConstant::OBJECT_MANAGER_REMOVE
+            ];
             unset($this->objects[$i]);
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function flush()
+    {
+        foreach($this->notFlushedObjects as $key => $notFlushedObject) {
+            if ($notFlushedObject["action"] == ObjectManagerConstant::OBJECT_MANAGER_PERSIST) {
+                // TODO: database save or update
+            }
+
+            if ($notFlushedObject["action"] == ObjectManagerConstant::OBJECT_MANAGER_REMOVE) {
+                // TODO: database delete
+            }
+
+            unset($this->notFlushedObjects[$key]);
         }
     }
 }

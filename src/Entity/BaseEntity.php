@@ -4,7 +4,6 @@ namespace App\Entity;
 
 class BaseEntity
 {
-    // FIXME: make id generated
     private ?int $id;
 
     public function getId(): ?int

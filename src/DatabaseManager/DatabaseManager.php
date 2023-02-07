@@ -3,6 +3,8 @@
 namespace App\DatabaseManager;
 
 use App\Constant\DatabaseManagerConstant;
+use App\DatabaseManager\Database\Mysql;
+use App\DatabaseManager\Database\QueryInterface;
 use App\Exception\DatabaseManagerException;
 
 class DatabaseManager
@@ -14,7 +16,6 @@ class DatabaseManager
     private string $database;
     private array $options;
     private int $databaseType;
-    private Mysql $mysql;
 
     public function __construct()
     {
@@ -44,15 +45,14 @@ class DatabaseManager
         $this->options = $options;
     }
 
-    public function createQueryBuilder(?string $alias): DatabaseQuery
+    // TODO: implement alias
+    public function createQueryBuilder(?string $alias = null): QueryInterface
     {
-        // TODO: implement
-        // string $user, string $password, string $host, string $port, string $database, array $options, int $databaseType
         $interface = null;
         if ($this->databaseType == DatabaseManagerConstant::DATABASE_TYPE_MYSQL) {
-            // $interface = new Mysql(string $user, string $password, string $host, string $port, string $database, array $options);
+            $interface = new Mysql($this->user, $this->password, $this->host, $this->port, $this->database, $this->options);
         }
 
-        return new DatabaseQuery();
+        return $interface;
     }
 }
