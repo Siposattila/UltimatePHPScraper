@@ -47,6 +47,12 @@ class DatabaseManager
     public function createQueryBuilder(?string $alias): DatabaseQuery
     {
         // TODO: implement
+        // string $user, string $password, string $host, string $port, string $database, array $options, int $databaseType
+        $interface = null;
+        if ($this->databaseType == DatabaseManagerConstant::DATABASE_TYPE_MYSQL) {
+            // $interface = new Mysql(string $user, string $password, string $host, string $port, string $database, array $options);
+        }
+
         return new DatabaseQuery();
     }
 }
