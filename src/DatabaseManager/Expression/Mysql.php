@@ -4,18 +4,22 @@ namespace App\DatabaseManager\Expression;
 
 class Mysql implements ExpressionInterface
 {
-    public function select(array $columns = []): string
+    public function select(array $x = []): string
     {
-        if (empty($columns)) {
+        if (empty($x)) {
             return "SELECT *";
         }
 
-        return "SELECT ".implode(", ", $columns);
+        return "SELECT ".implode(", ", $x);
     }
 
-    public function from(string $table): string
+    public function from(string $x, string $alias = ""): string
     {
-        return "FROM $table";
+        if (!empty($alias)) {
+            return "FROM ".$this->as($x, $alias);
+        }
+
+        return "FROM $x";
     }
 
     public function where(): string
@@ -38,9 +42,9 @@ class Mysql implements ExpressionInterface
         return "LIMIT $x";
     }
 
-    public function orderBy(string $column, string $order): string
+    public function orderBy(string $x, string $order): string
     {
-        return "ORDER BY $column $order";
+        return "ORDER BY $x $order";
     }
 
     public function having(string $x): string
@@ -66,5 +70,10 @@ class Mysql implements ExpressionInterface
     public function notEqual(string $x, string $y): string
     {
         return "$x != $y";
+    }
+
+    public function as(string $x, string $alias): string
+    {
+        return "$x AS $alias";
     }
 }

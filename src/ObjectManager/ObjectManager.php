@@ -14,6 +14,7 @@ class ObjectManager
      * @psalm-var class-string<T>
      */
     private string $entityClass;
+    private ObjectData $objectData;
 
     /**
      * @var object[] $objects
@@ -21,11 +22,12 @@ class ObjectManager
      */
     private $objects;
     private array $notFlushedObjects;
-    private DatabaseManager $databaseManager;
+    protected DatabaseManager $databaseManager;
 
     public function __construct(string $entityClass)
     {
         $this->entityClass = $entityClass;
+        $this->objectData = new ObjectData($entityClass);
         $this->databaseManager = new DatabaseManager();
 
         $this->objects = $this->findAll();

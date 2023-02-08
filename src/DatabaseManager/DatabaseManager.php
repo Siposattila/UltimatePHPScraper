@@ -16,6 +16,7 @@ class DatabaseManager
     private string $database;
     private array $options;
     private int $databaseType;
+    private string $alias;
 
     public function __construct()
     {
@@ -45,9 +46,10 @@ class DatabaseManager
         $this->options = $options;
     }
 
-    // TODO: implement alias
     public function createQueryBuilder(?string $alias = null): QueryInterface
     {
+        $this->alias = $alias;
+
         $interface = null;
         if ($this->databaseType == DatabaseManagerConstant::DATABASE_TYPE_MYSQL) {
             $interface = new Mysql($this->user, $this->password, $this->host, $this->port, $this->database, $this->options);

@@ -2,6 +2,10 @@
 
 namespace App\Entity;
 
+use App\Attribute\Entity;
+use App\Repository\KawasakiMotorRepository;
+
+#[Entity(tableName: "kawasaki_motor", repositoryClass: KawasakiMotorRepository::class)]
 class KawasakiMotor extends BaseEntity
 {
     private ?string $type = null;

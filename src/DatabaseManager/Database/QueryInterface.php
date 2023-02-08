@@ -6,18 +6,19 @@ use App\DatabaseManager\Expression\ExpressionInterface;
 
 interface QueryInterface
 {
+    private string $query;
     private array $parameters;
+    private array $queryElements;
     public ExpressionInterface $expression;
 
-    public function select(): self;
-    public function from(): self;
-    public function where(): self;
-    public function insert(): self;
-    public function update(): self;
-    public function delete(): self;
-    public function andWhere(): self;
-    public function orWhere(): self;
+    public function select(array $columns): self;
+    public function from(string $table, string $alias = ""): self;
+    public function insert(array $columns, array $values): int;
+    public function update(): void;
+    public function delete(): void;
+    public function andWhere(string $where): self;
+    public function orWhere(string $where): self;
     public function setParameter(string $name, string $value): self;
-    public function setQuery(string $query): void;
+    public function getQuery(string $query): self;
     public function execute(): array;
 }

@@ -6,12 +6,10 @@ use App\DatabaseManager\Expression\Mysql as ExpressionMysql;
 use PDO;
 use PDOStatement;
 
-// TODO: implement
 class Mysql extends AbstractDatabase implements QueryInterface
 {
     private PDO $pdo;
     private PDOStatement $statement;
-    private string $query;
 
     public function __construct(
         private readonly string $user,
@@ -22,6 +20,15 @@ class Mysql extends AbstractDatabase implements QueryInterface
         private readonly array $options
     )
     {
+        $this->query = "";
+        $this->parameters = [];
+        $this->queryElements = [
+            "select" => ["columns" => []],
+            "from" => ["alias" => "", "table" => ""],
+            "where" => ["and" => [], "or" => []],
+            "order" => [],
+            "limit" => null
+        ];
         $this->expression = new ExpressionMysql();
         $this->getConnection();
     }
@@ -32,43 +39,47 @@ class Mysql extends AbstractDatabase implements QueryInterface
         $this->pdo = new PDO($dsn, $this->user, $this->password, [PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ]);
     }
 
-    public function select(): self
+    public function select(array $columns = []): self
     {
+        $this->queryElements["select"]["columns"] = $columns;
         return $this;
     }
 
-    public function from(): self
+    public function from(string $table, string $alias = ""): self
     {
+        $this->queryElements["from"]["table"] = $table;
+        $this->queryElements["from"]["alias"] = $alias;
+
         return $this;
     }
 
-    public function where(): self
+    public function insert(array $columns, array $values): int
     {
+        $insert = "INSERT INTO Customers (".implode(", ", $columns).") VALUES (".implode(", ", $values).")";
+        $this->pdo->exec($insert);
+
+        return $this->pdo->lastInsertId();
+    }
+
+    public function update(): void
+    {
+        // TODO: implement
+    }
+
+    public function delete(): void
+    {
+        // TODO: implement
+    }
+
+    public function andWhere(string $where): self
+    {
+        $this->queryElements["where"]["and"][] = $where;
         return $this;
     }
 
-    public function insert(): self
+    public function orWhere(string $where): self
     {
-        return $this;
-    }
-
-    public function update(): self
-    {
-        return $this;
-    }
-
-    public function delete(): self
-    {
-        return $this;
-    }
-
-    public function andWhere(): self
-    {
-        return $this;
-    }
-
-    public function orWhere(): self
-    {
+        $this->queryElements["where"]["or"][] = $where;
         return $this;
     }
 
@@ -78,9 +89,11 @@ class Mysql extends AbstractDatabase implements QueryInterface
         return $this;
     }
 
-    public function setQuery(string $query): void
+    public function getQuery(string $query): self
     {
+        // TODO: build query from queryElements
         $this->query = $query;
+        return $this;
     }
 
     public function execute(): array
