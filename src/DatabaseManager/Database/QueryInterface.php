@@ -3,6 +3,7 @@
 namespace App\DatabaseManager\Database;
 
 use App\DatabaseManager\Expression\ExpressionInterface;
+use App\ObjectManager\ObjectData;
 
 interface QueryInterface
 {
@@ -18,7 +19,11 @@ interface QueryInterface
     public function delete(): void;
     public function andWhere(string $where): self;
     public function orWhere(string $where): self;
+    public function orderBy(string $column, string $order = "ASC"): self;
+    public function limit(?int $limit = null): self;
+    public function ensureDatabaseCreated(): void;
+    public function ensureTableCreated(ObjectData $objectData): void;
     public function setParameter(string $name, string $value): self;
-    public function getQuery(string $query): self;
+    public function getQuery(): self;
     public function execute(): array;
 }

@@ -32,7 +32,10 @@ class TestRepository extends ObjectManager
 
     public function queryBuilderTestSelect(): array
     {
-        // TODO: TEST
-        $qb = $this->databaseManager->createQueryBuilder();
+        return $this->databaseManager->createQueryBuilder()
+            ->andWhere("age = 18")
+            ->andWhere("year = 2001")
+            ->getQuery()
+            ->execute();
     }
 }

@@ -4,6 +4,9 @@ namespace App\ObjectManager;
 
 use App\Constant\ObjectManagerConstant;
 use App\DatabaseManager\DatabaseManager;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 /**
  * @template T of object
@@ -15,6 +18,7 @@ class ObjectManager
      */
     private string $entityClass;
     private ObjectData $objectData;
+    private Serializer $serializer;
 
     /**
      * @var object[] $objects
@@ -28,6 +32,7 @@ class ObjectManager
     {
         $this->entityClass = $entityClass;
         $this->objectData = new ObjectData($entityClass);
+        $this->serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
         $this->databaseManager = new DatabaseManager();
 
         $this->objects = $this->findAll();
@@ -39,19 +44,7 @@ class ObjectManager
      */
     public function find(int $id)
     {
-        $i = 0;
-        while($i < count($this->objects) && $this->objects[$i]->getId() != $id) {
-            if ($this->objects[$i]->getId() > $id) {
-                $i = count($this->objects);
-            }
-            $i++;
-        }
-
-        if ($i < count($this->objects)) {
-            return $this->objects[$i];
-        }
-
-        return null;
+        return $this->findBy(["id" => $id], null, 1)[0];
     }
 
     /**
@@ -60,7 +53,7 @@ class ObjectManager
      */
     public function findOneBy(array $criteria, array $orderBy = null)
     {
-        // TODO: implement
+        return $this->findBy($criteria, $orderBy, 1)[0];
     }
 
     /**
@@ -77,8 +70,45 @@ class ObjectManager
      */
     public function findBy(array $criteria, array $orderBy = null, int $limit = null)
     {
-        // TODO: implement
-        return [];
+        if (empty($this->objects)) {
+            $queryBuilder = $this->databaseManager->createQueryBuilder();
+            $queryBuilder = $queryBuilder->select([])
+                ->from($this->objectData->getTableName());
+
+            foreach ($criteria as $key => $crit) {
+                $queryBuilder = $queryBuilder->andWhere($queryBuilder->expression->equal($key, $crit));
+            }
+
+            foreach ($orderBy as $key => $order) {
+                $queryBuilder = $queryBuilder->orderBy($key, $order);
+            }
+
+            $this->objects = $queryBuilder->limit($limit)
+                ->getQuery()
+                ->execute();
+        }
+
+        if (empty($criteria)) {
+            return $this->objects;
+        }
+
+        $result = [];
+        $criteriaJson = json_encode($criteria);
+        foreach ($this->objects as $object) {
+            $objectArray = json_decode($this->serializer->serialize($object, "json"), true);
+            $keys = array_keys($criteria);
+            $compareHelper = [];
+
+            foreach ($keys as $critKey) {
+                $compareHelper[$critKey] = $objectArray[$critKey];
+            }
+
+            if (strcmp(json_encode($compareHelper), $criteriaJson) == 0) {
+                $result[] = $object;
+            }
+        }
+
+        return $result;
     }
 
     /**

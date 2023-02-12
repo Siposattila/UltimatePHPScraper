@@ -3,6 +3,7 @@
 namespace App\DatabaseManager\Database;
 
 use App\DatabaseManager\Expression\Mysql as ExpressionMysql;
+use App\ObjectManager\ObjectData;
 use PDO;
 use PDOStatement;
 
@@ -83,16 +84,67 @@ class Mysql extends AbstractDatabase implements QueryInterface
         return $this;
     }
 
+    public function orderBy(string $column, string $order = "ASC"): self
+    {
+        $this->queryElements["order"][$column] = $order;
+        return $this;
+    }
+
+    public function limit(?int $limit = null): self
+    {
+        $this->queryElements["limit"] = $limit;
+        return $this;
+    }
+
+    public function ensureDatabaseCreated(): void
+    {
+        $this->pdo->exec("CREATE DATABASE IF NOT EXISTS ".$this->database.";");
+    }
+
+    public function ensureTableCreated(ObjectData $objectData): void
+    {
+        $count = $this->pdo->query("SELECT COUNT(TABLE_NAME)
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA LIKE ".$this->database." AND TABLE_TYPE LIKE 'BASE TABLE'
+            AND TABLE_NAME = '".$objectData->getTableName()."';")
+            ->fetch();
+
+        if ($count <= 0) {
+            // TODO: need an attribute to represent database columns
+            // TODO: object data should get those attributes
+            // TODO: need to create the table
+        }
+    }
+
     public function setParameter(string $name, string $value): self
     {
         $this->parameters[$name] = $value;
         return $this;
     }
 
-    public function getQuery(string $query): self
+    public function getQuery(): self
     {
-        // TODO: build query from queryElements
-        $this->query = $query;
+        $query = "";
+
+        $query .= $this->expression->select($this->queryElements["select"]["columns"]);
+        $query .= $this->expression->from($this->queryElements["from"]["table"], $this->queryElements["from"]["alias"]);
+        $query .= $this->expression->where();
+
+        foreach ($this->queryElements["where"]["and"] as $and) {
+            $query .= $this->expression->and($query, $and);
+        }
+
+        foreach ($this->queryElements["where"]["or"] as $or) {
+            $query .= $this->expression->or($query, $or);
+        }
+
+        foreach ($this->queryElements["order"] as $column => $order) {
+            $query .= $this->expression->orderBy($column, $order);
+        }
+
+        $query .= $this->expression->limit($this->queryElements["limit"]);
+
+        $this->query = $query.";";
         return $this;
     }
 
