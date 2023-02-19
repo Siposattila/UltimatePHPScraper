@@ -2,6 +2,7 @@
 
 namespace App\DatabaseManager\Database;
 
+use App\Constant\DatabaseManagerConstant;
 use App\DatabaseManager\Expression\Mysql as ExpressionMysql;
 use App\ObjectManager\ObjectData;
 use PDO;
@@ -110,9 +111,20 @@ class Mysql extends AbstractDatabase implements QueryInterface
             ->fetch();
 
         if ($count <= 0) {
-            // TODO: need an attribute to represent database columns
-            // TODO: object data should get those attributes
-            // TODO: need to create the table
+            $columns = "";
+            foreach ($objectData->getColumnFields() as $column) {
+                if ($column->columnName == "id") {
+                    $id = $objectData->getIdField();
+                    $auto = ($id->generated)?"AUTO_INCREMENT":"";
+                    $columns .= "id INT $auto PRIMARY KEY,";
+                }
+                else {
+                    // $type = DatabaseManagerConstant::DATABASE_COLUMN_TYPES[DatabaseManagerConstant::DATABASE_TYPE_MYSQL]
+                    // $columns .= $column->columnName." ".;
+                }
+            }
+
+            $this->pdo->exec("CREATE TABLE ($columns);");
         }
     }
 

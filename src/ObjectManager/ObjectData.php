@@ -2,7 +2,9 @@
 
 namespace App\ObjectManager;
 
+use App\Attribute\Column;
 use App\Attribute\Entity;
+use App\Attribute\Id;
 use App\Exception\ObjectManagerNotValidEntityException;
 use ReflectionClass;
 use Throwable;
@@ -36,5 +38,32 @@ class ObjectData
         }
 
         return $this->classAttribute->tableName;
+    }
+
+    /**
+     * @return ReflectionProperty[]
+     */
+    public function getFields(): array
+    {
+        return $this->reflectionClass->getProperties();
+    }
+
+    /**
+     * @return Column[]
+     */
+    public function getColumnFields(): array
+    {
+        $result = [];
+        $columns = $this->reflectionClass->getAttributes(Column::class);
+        foreach ($columns as $column) {
+            $result[] = $column->newInstance();
+        }
+
+        return $result;
+    }
+
+    public function getIdField(): Id
+    {
+        return $this->reflectionClass->getAttributes(Id::class)[0]->newInstance();
     }
 }
