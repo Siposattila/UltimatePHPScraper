@@ -2,16 +2,16 @@
 
 namespace App\DatabaseManager\Database;
 
-use App\DatabaseManager\Expression\ExpressionInterface;
 use App\ObjectManager\ObjectData;
 
+/**
+ * @property string $query
+ * @property array $parameters
+ * @property array $queryElements
+ * @property public ExpressionInterface $expression
+ */
 interface QueryInterface
 {
-    private string $query;
-    private array $parameters;
-    private array $queryElements;
-    public ExpressionInterface $expression;
-
     public function select(array $columns): self;
     public function from(string $table, string $alias = ""): self;
     public function insert(array $columns, array $values): int;

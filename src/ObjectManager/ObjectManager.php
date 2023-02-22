@@ -42,7 +42,7 @@ class ObjectManager
      * @return object|null
      * @psalm-return ?T
      */
-    public function find(int $id)
+    public function find(int $id): object
     {
         return $this->findBy(["id" => $id], null, 1)[0];
     }
@@ -51,7 +51,7 @@ class ObjectManager
      * @return object|null
      * @psalm-return ?T
      */
-    public function findOneBy(array $criteria, array $orderBy = null)
+    public function findOneBy(array $criteria, array $orderBy = null): object
     {
         return $this->findBy($criteria, $orderBy, 1)[0];
     }
@@ -59,7 +59,7 @@ class ObjectManager
     /**
      * @psalm-return list<T>
      */
-    public function findAll()
+    public function findAll(): array
     {
         return $this->findBy([]);
     }
@@ -68,7 +68,7 @@ class ObjectManager
      * @return object[]
      * @psalm-return list<T>
      */
-    public function findBy(array $criteria, array $orderBy = null, int $limit = null)
+    public function findBy(array $criteria, array $orderBy = null, int $limit = null): array
     {
         if (empty($this->objects)) {
             $queryBuilder = $this->databaseManager->createQueryBuilder();
@@ -117,7 +117,7 @@ class ObjectManager
      * 
      * @return void
      */
-    public function persist($entity)
+    public function persist($entity): void
     {
         $this->objects[] = $entity;
         $this->notFlushedObjects[] = [
@@ -132,7 +132,7 @@ class ObjectManager
      * 
      * @return void
      */
-    public function remove($entity)
+    public function remove($entity): void
     {
         $i = 0;
         while($i < count($this->objects) && $this->objects[$i]->getId() != $entity->getId()) {
@@ -151,7 +151,7 @@ class ObjectManager
     /**
      * @return void
      */
-    public function flush()
+    public function flush(): void
     {
         foreach($this->notFlushedObjects as $key => $notFlushedObject) {
             if ($notFlushedObject["action"] == ObjectManagerConstant::OBJECT_MANAGER_PERSIST) {

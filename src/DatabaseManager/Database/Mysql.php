@@ -2,7 +2,7 @@
 
 namespace App\DatabaseManager\Database;
 
-use App\Constant\DatabaseManagerConstant;
+use App\DatabaseManager\Expression\ExpressionInterface;
 use App\DatabaseManager\Expression\Mysql as ExpressionMysql;
 use App\ObjectManager\ObjectData;
 use PDO;
@@ -12,6 +12,7 @@ class Mysql extends AbstractDatabase implements QueryInterface
 {
     private PDO $pdo;
     private PDOStatement $statement;
+    public ExpressionInterface $expression;
 
     public function __construct(
         private readonly string $user,
