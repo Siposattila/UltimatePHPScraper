@@ -8,8 +8,8 @@ use Attribute;
 class Entity
 {
     public function __construct(
-        public readonly string $tableName = "",
-        public readonly string $repositoryClass
+        public readonly string $repositoryClass,
+        public readonly string $tableName = ""
     ) {
     }
 }

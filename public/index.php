@@ -1,6 +1,7 @@
 <?php
+
+use App\Scraper\TestScraper;
+
 require_once __DIR__ . "/../bootstrap.php";
 
-use App\Scraper\KawasakiScraper;
-
-// (new KawasakiScraper())->scrape();
+(new TestScraper)->scrape();

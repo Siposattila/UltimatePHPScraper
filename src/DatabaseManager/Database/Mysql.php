@@ -2,6 +2,7 @@
 
 namespace App\DatabaseManager\Database;
 
+use App\Constant\MysqlConstant;
 use App\DatabaseManager\Expression\ExpressionInterface;
 use App\DatabaseManager\Expression\Mysql as ExpressionMysql;
 use App\ObjectManager\ObjectData;
@@ -11,7 +12,7 @@ use PDOStatement;
 class Mysql extends AbstractDatabase implements QueryInterface
 {
     private PDO $pdo;
-    private PDOStatement $statement;
+    private ?PDOStatement $statement = null;
     public ExpressionInterface $expression;
 
     public function __construct(
@@ -21,8 +22,7 @@ class Mysql extends AbstractDatabase implements QueryInterface
         private readonly string $port,
         private readonly string $database,
         private readonly array $options
-    )
-    {
+    ) {
         $this->query = "";
         $this->parameters = [];
         $this->queryElements = [
@@ -38,7 +38,7 @@ class Mysql extends AbstractDatabase implements QueryInterface
 
     protected function getConnection(): void
     {
-        $dsn = "mysql:host=".$this->host.":".$this->port.";dbname=".$this->database.";charset=".$this->options["charset"];
+        $dsn = "mysql:host=" . $this->host . ":" . $this->port . ";dbname=" . $this->database . ";charset=" . $this->options["charset"];
         $this->pdo = new PDO($dsn, $this->user, $this->password, [PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ]);
     }
 
@@ -58,7 +58,7 @@ class Mysql extends AbstractDatabase implements QueryInterface
 
     public function insert(array $columns, array $values): int
     {
-        $insert = "INSERT INTO Customers (".implode(", ", $columns).") VALUES (".implode(", ", $values).")";
+        $insert = "INSERT INTO Customers (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ")";
         $this->pdo->exec($insert);
 
         return $this->pdo->lastInsertId();
@@ -100,32 +100,51 @@ class Mysql extends AbstractDatabase implements QueryInterface
 
     public function ensureDatabaseCreated(): void
     {
-        $this->pdo->exec("CREATE DATABASE IF NOT EXISTS ".$this->database.";");
+        $this->pdo->exec("CREATE DATABASE IF NOT EXISTS " . $this->database . ";");
     }
 
     public function ensureTableCreated(ObjectData $objectData): void
     {
-        $count = $this->pdo->query("SELECT COUNT(TABLE_NAME)
+        $count = $this->pdo->query("SELECT COUNT(TABLE_NAME) AS count 
             FROM information_schema.TABLES
-            WHERE TABLE_SCHEMA LIKE ".$this->database." AND TABLE_TYPE LIKE 'BASE TABLE'
-            AND TABLE_NAME = '".$objectData->getTableName()."';")
-            ->fetch();
+            WHERE TABLE_SCHEMA LIKE '" . $this->database . "' AND TABLE_TYPE LIKE 'BASE TABLE'
+            AND TABLE_NAME = '" . $objectData->getTableName() . "';")
+            ->fetch()->count;
 
+        // TODO: rework
         if ($count <= 0) {
             $columns = "";
+            $types = array_flip(MysqlConstant::MYSQL_TYPES);
             foreach ($objectData->getColumnFields() as $column) {
                 if ($column->columnName == "id") {
                     $id = $objectData->getIdField();
-                    $auto = ($id->generated)?"AUTO_INCREMENT":"";
-                    $columns .= "id INT $auto PRIMARY KEY,";
-                }
-                else {
-                    // $type = DatabaseManagerConstant::DATABASE_COLUMN_TYPES[DatabaseManagerConstant::DATABASE_TYPE_MYSQL]
-                    // $columns .= $column->columnName." ".;
+                    $auto = ($id->generated) ? "AUTO_INCREMENT" : "";
+                    $columns .= "id INT $auto PRIMARY KEY, ";
+                } else {
+                    $type = MysqlConstant::MYSQL_REAL_TYPES[$types[$column->columnType]];
+                    if (!is_null($column->length)) {
+                        $type .= "(" . $column->length . ")";
+                    }
+
+                    if (is_null($column->length)) {
+                        $type .= "(" . MysqlConstant::MYSQL_REAL_TYPES_LENGTH[$types[$column->columnType]] . ")";
+                    }
+
+                    $columns .= $column->columnName . " " . $type . " ";
+
+                    if ($column->nullable) {
+                        $columns .= "DEFAULT NULL, ";
+                    }
+
+                    if (!$column->nullable) {
+                        $columns .= "NOT NULL, ";
+                    }
                 }
             }
 
-            $this->pdo->exec("CREATE TABLE ($columns);");
+            $columns[strlen($columns) - 2] = " ";
+            var_dump($columns);
+            $this->pdo->exec("CREATE TABLE " . $objectData->getTableName() . " ($columns);");
         }
     }
 
@@ -141,7 +160,10 @@ class Mysql extends AbstractDatabase implements QueryInterface
 
         $query .= $this->expression->select($this->queryElements["select"]["columns"]);
         $query .= $this->expression->from($this->queryElements["from"]["table"], $this->queryElements["from"]["alias"]);
-        $query .= $this->expression->where();
+
+        if (!empty($this->queryElements["where"]["and"]) || !empty($this->queryElements["where"]["or"])) {
+            $query .= $this->expression->where();
+        }
 
         foreach ($this->queryElements["where"]["and"] as $and) {
             $query .= $this->expression->and($query, $and);
@@ -155,14 +177,18 @@ class Mysql extends AbstractDatabase implements QueryInterface
             $query .= $this->expression->orderBy($column, $order);
         }
 
-        $query .= $this->expression->limit($this->queryElements["limit"]);
+        if (!is_null($this->queryElements["limit"])) {
+            $query .= $this->expression->limit($this->queryElements["limit"]);
+        }
 
-        $this->query = $query.";";
+        $this->query = $query . ";";
+        var_dump($query); // TODO: need to delete
         return $this;
     }
 
     public function execute(): array
     {
+        $this->statement = $this->pdo->prepare($this->query);
         $this->statement->execute($this->parameters);
         return $this->statement->fetchAll();
     }

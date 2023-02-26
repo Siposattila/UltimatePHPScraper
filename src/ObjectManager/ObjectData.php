@@ -7,7 +7,6 @@ use App\Attribute\Entity;
 use App\Attribute\Id;
 use App\Exception\ObjectManagerNotValidEntityException;
 use ReflectionClass;
-use Throwable;
 
 class ObjectData
 {
@@ -18,12 +17,11 @@ class ObjectData
     {
         $this->reflectionClass = new ReflectionClass($entityClass);
 
-        try
-        {
-            $this->classAttribute = $this->reflectionClass->getAttributes(Entity::class)[0]->newInstance();
-        } catch(Throwable $t) {
-            throw new ObjectManagerNotValidEntityException($entityClass." is not a valid entity since it has no ".Entity::class." attribute!");
+        $entity = $this->reflectionClass->getAttributes(Entity::class);
+        if (empty($entity)) {
+            throw new ObjectManagerNotValidEntityException($entityClass . " is not a valid entity since it has no " . Entity::class . " attribute!");
         }
+        $this->classAttribute = $entity[0]->newInstance();
     }
 
     public function getRepository(): string
@@ -54,16 +52,26 @@ class ObjectData
     public function getColumnFields(): array
     {
         $result = [];
-        $columns = $this->reflectionClass->getAttributes(Column::class);
-        foreach ($columns as $column) {
-            $result[] = $column->newInstance();
+        $properties = $this->reflectionClass->getProperties();
+        foreach ($properties as $property) {
+            $column = $property->getAttributes(Column::class);
+            if (!empty($column)) {
+                $result[] = $column[0]->newInstance();
+            }
         }
 
         return $result;
     }
 
-    public function getIdField(): Id
+    public function getIdField(): ?Id
     {
-        return $this->reflectionClass->getAttributes(Id::class)[0]->newInstance();
+        $properties = $this->reflectionClass->getProperties();
+        foreach ($properties as $property) {
+            if ($property->getName() == "id") {
+                return $property->getAttributes(Id::class)[0]->newInstance();
+            }
+        }
+
+        return null;
     }
 }

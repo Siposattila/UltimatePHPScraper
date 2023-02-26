@@ -31,9 +31,12 @@ class ObjectManager
     public function __construct(string $entityClass)
     {
         $this->entityClass = $entityClass;
-        $this->objectData = new ObjectData($entityClass);
+        $this->objectData = new ObjectData($this->entityClass);
         $this->serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
         $this->databaseManager = new DatabaseManager();
+
+        $this->databaseManager->createQueryBuilder()->ensureDatabaseCreated();
+        $this->databaseManager->createQueryBuilder()->ensureTableCreated($this->objectData);
 
         $this->objects = $this->findAll();
     }
@@ -79,12 +82,17 @@ class ObjectManager
                 $queryBuilder = $queryBuilder->andWhere($queryBuilder->expression->equal($key, $crit));
             }
 
-            foreach ($orderBy as $key => $order) {
-                $queryBuilder = $queryBuilder->orderBy($key, $order);
+            if (!is_null($orderBy)) {
+                foreach ($orderBy as $key => $order) {
+                    $queryBuilder = $queryBuilder->orderBy($key, $order);
+                }
             }
 
-            $this->objects = $queryBuilder->limit($limit)
-                ->getQuery()
+            if (!is_null($limit)) {
+                $queryBuilder->limit($limit);
+            }
+
+            $this->objects = $queryBuilder->getQuery()
                 ->execute();
         }
 
@@ -135,7 +143,7 @@ class ObjectManager
     public function remove($entity): void
     {
         $i = 0;
-        while($i < count($this->objects) && $this->objects[$i]->getId() != $entity->getId()) {
+        while ($i < count($this->objects) && $this->objects[$i]->getId() != $entity->getId()) {
             $i++;
         }
 
@@ -153,7 +161,7 @@ class ObjectManager
      */
     public function flush(): void
     {
-        foreach($this->notFlushedObjects as $key => $notFlushedObject) {
+        foreach ($this->notFlushedObjects as $key => $notFlushedObject) {
             if ($notFlushedObject["action"] == ObjectManagerConstant::OBJECT_MANAGER_PERSIST) {
                 // TODO: database save or update
             }
