@@ -173,4 +173,19 @@ class ObjectManager
             unset($this->notFlushedObjects[$key]);
         }
     }
+
+    private function insert(): void
+    {
+        // TODO: implement
+    }
+
+    private function update(): void
+    {
+        // TODO: implement
+    }
+
+    private function delete(): void
+    {
+        // TODO: implement
+    }
 }

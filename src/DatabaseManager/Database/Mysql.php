@@ -56,22 +56,26 @@ class Mysql extends AbstractDatabase implements QueryInterface
         return $this;
     }
 
-    public function insert(array $columns, array $values): int
+    public function insert(string $table, array $columns, array $values): int
     {
-        $insert = "INSERT INTO Customers (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ")";
+        $insert = "INSERT INTO $table (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ");";
         $this->pdo->exec($insert);
 
         return $this->pdo->lastInsertId();
     }
 
-    public function update(): void
+    public function update(string $table, int $id, array $columns, array $values): void
     {
-        // TODO: implement
+        $update = "UPDATE $table " . implode(", ", array_map(function ($column, $value) {
+            return $column . " = " . $value;
+        }, $columns, $values)) . " WHERE id = $id;";
+        $this->pdo->exec($update);
     }
 
-    public function delete(): void
+    public function delete(string $table, int $id): void
     {
-        // TODO: implement
+        $delete = "DELETE FROM $table WHERE id = $id;";
+        $this->pdo->exec($delete);
     }
 
     public function andWhere(string $where): self

@@ -4,19 +4,13 @@ namespace App\DatabaseManager\Database;
 
 use App\ObjectManager\ObjectData;
 
-/**
- * @property string $query
- * @property array $parameters
- * @property array $queryElements
- * @property public ExpressionInterface $expression
- */
 interface QueryInterface
 {
     public function select(array $columns): self;
     public function from(string $table, string $alias = ""): self;
-    public function insert(array $columns, array $values): int;
-    public function update(): void;
-    public function delete(): void;
+    public function insert(string $table, array $columns, array $values): int;
+    public function update(string $table, int $id, array $columns, array $values): void;
+    public function delete(string $table, int $id): void;
     public function andWhere(string $where): self;
     public function orWhere(string $where): self;
     public function orderBy(string $column, string $order = "ASC"): self;
