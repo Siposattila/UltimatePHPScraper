@@ -174,9 +174,12 @@ class ObjectManager
         }
     }
 
-    private function insert(): void
+    private function insert(object $entity): void
     {
-        // TODO: implement
+        $entityJson = $this->serializer->serialize($entity);
+        $this->databaseManager->createQueryBuilder()->insert(
+            $this->objectData->getTableName(),
+        );
     }
 
     private function update(): void
@@ -187,5 +190,26 @@ class ObjectManager
     private function delete(): void
     {
         // TODO: implement
+    }
+
+    private function objectDifference(array $new, array $old): array
+    {
+        $difference = [];
+        foreach ($new as $key => $value) {
+            if (array_key_exists($key, $old)) {
+                if (is_array($value)) {
+                    $recursiveDifference = $this->objectDifference($value, $old[$key]);
+                    if (count($recursiveDifference)) {
+                        $difference[$key] = $recursiveDifference;
+                    }
+                } else {
+                    if ($value != $old[$key]) {
+                        $difference[$key] = $value;
+                    }
+                }
+            }
+        }
+
+        return $difference;
     }
 }
