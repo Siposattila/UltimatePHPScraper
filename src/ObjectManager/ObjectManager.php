@@ -25,6 +25,10 @@ class ObjectManager
      * @psalm-var list<T>
      */
     private $objects;
+
+    /**
+     * @var Flush[] $notFlushedObjects
+     */
     private array $notFlushedObjects;
     protected DatabaseManager $databaseManager;
 
@@ -47,7 +51,7 @@ class ObjectManager
      */
     public function find(int $id): object
     {
-        return $this->findBy(["id" => $id], null, 1)[0];
+        return $this->findBy([$this->objectData->getIdField()->getIdColumn()->columnName => $id], null, 1)[0];
     }
 
     /**
@@ -116,6 +120,10 @@ class ObjectManager
             }
         }
 
+        foreach ($result as $key => $object) {
+            $result[$key] = $this->serializer->deserialize(json_encode($object), $this->entityClass, "json");
+        }
+
         return $result;
     }
 
@@ -125,13 +133,14 @@ class ObjectManager
      * 
      * @return void
      */
-    public function persist($entity): void
+    protected function persist($entity): void
     {
         $this->objects[] = $entity;
-        $this->notFlushedObjects[] = [
-            "index" => count($this->objects) - 1,
-            "action" => ObjectManagerConstant::OBJECT_MANAGER_PERSIST
-        ];
+        $this->notFlushedObjects[] = new Flush(
+            count($this->objects) - 1,
+            is_null($entity->getId()),
+            ObjectManagerConstant::OBJECT_MANAGER_PERSIST
+        );
     }
 
     /**
@@ -140,7 +149,7 @@ class ObjectManager
      * 
      * @return void
      */
-    public function remove($entity): void
+    protected function remove($entity): void
     {
         $i = 0;
         while ($i < count($this->objects) && $this->objects[$i]->getId() != $entity->getId()) {
@@ -148,10 +157,11 @@ class ObjectManager
         }
 
         if ($i < count($this->objects)) {
-            $this->notFlushedObjects[] = [
-                "index" => $this->objects[$i]->getId(),
-                "action" => ObjectManagerConstant::OBJECT_MANAGER_REMOVE
-            ];
+            $this->notFlushedObjects[] = new Flush(
+                $this->objects[$i]->getId(),
+                false,
+                ObjectManagerConstant::OBJECT_MANAGER_REMOVE
+            );
             unset($this->objects[$i]);
         }
     }
@@ -159,37 +169,68 @@ class ObjectManager
     /**
      * @return void
      */
-    public function flush(): void
+    protected function flush(): void
     {
         foreach ($this->notFlushedObjects as $key => $notFlushedObject) {
-            if ($notFlushedObject["action"] == ObjectManagerConstant::OBJECT_MANAGER_PERSIST) {
-                // TODO: database save or update
+            if ($notFlushedObject->getAction() == ObjectManagerConstant::OBJECT_MANAGER_PERSIST) {
+                if ($notFlushedObject->getIsNew()) {
+                    $this->objects[$notFlushedObject->getIndex()]->setId($this->insert($this->objects[$notFlushedObject->getIndex()]));
+                }
+
+                if (!$notFlushedObject->getIsNew()) {
+                    $this->update($this->objects[$notFlushedObject->getIndex()]);
+                }
             }
 
-            if ($notFlushedObject["action"] == ObjectManagerConstant::OBJECT_MANAGER_REMOVE) {
-                // TODO: database delete
+            if ($notFlushedObject->getAction() == ObjectManagerConstant::OBJECT_MANAGER_REMOVE) {
+                $this->delete($notFlushedObject->getIndex());
             }
 
             unset($this->notFlushedObjects[$key]);
         }
     }
 
-    private function insert(object $entity): void
+    private function insert(object $entity): int
     {
-        $entityJson = $this->serializer->serialize($entity);
-        $this->databaseManager->createQueryBuilder()->insert(
+        $entityJson = json_decode($this->serializer->serialize($entity, "json"), true);
+        $idColumn = $this->objectData->getIdField();
+        if ($idColumn->generated) {
+            unset($entityJson[$idColumn->getIdColumn()->columnName]);
+        }
+
+        return $this->databaseManager->createQueryBuilder()->insert(
             $this->objectData->getTableName(),
+            array_keys($entityJson),
+            array_values($entityJson)
         );
     }
 
-    private function update(): void
+    private function update(object $entity): void
     {
-        // TODO: implement
+        $entityJson = json_decode($this->serializer->serialize($entity, "json"), true);
+        $entityOldJson = json_decode($this->serializer->serialize($this->find($entity->getId()), "json"), true);
+        $difference = $this->objectDifference($entityJson, $entityOldJson);
+        $idColumn = $this->objectData->getIdField();
+        if ($idColumn->generated && isset($difference[$idColumn->getIdColumn()->columnName])) {
+            unset($difference[$idColumn->getIdColumn()->columnName]);
+        }
+
+        $this->databaseManager->createQueryBuilder()->update(
+            $this->objectData->getTableName(),
+            $idColumn->getIdColumn()->columnName,
+            $entity->getId(),
+            array_keys($difference),
+            array_values($difference)
+        );
     }
 
-    private function delete(): void
+    private function delete(int $id): void
     {
-        // TODO: implement
+        $this->databaseManager->createQueryBuilder()->delete(
+            $this->objectData->getTableName(),
+            $this->objectData->getIdField()->getIdColumn()->columnName,
+            $id
+        );
     }
 
     private function objectDifference(array $new, array $old): array

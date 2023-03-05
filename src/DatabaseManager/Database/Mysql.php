@@ -28,7 +28,7 @@ class Mysql extends AbstractDatabase implements QueryInterface
         $this->queryElements = [
             "select" => ["columns" => []],
             "from" => ["alias" => "", "table" => ""],
-            "where" => ["and" => [], "or" => []],
+            "where" => ["where" => "", "and" => [], "or" => []],
             "order" => [],
             "limit" => null
         ];
@@ -58,24 +58,32 @@ class Mysql extends AbstractDatabase implements QueryInterface
 
     public function insert(string $table, array $columns, array $values): int
     {
-        $insert = "INSERT INTO $table (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ");";
+        $insert = "INSERT INTO $table (" . implode(", ", $columns) . ") VALUES (" . implode(", ", array_map(function ($value) {
+            return "'" . $value . "'";
+        }, $values)) . ");";
         $this->pdo->exec($insert);
 
         return $this->pdo->lastInsertId();
     }
 
-    public function update(string $table, int $id, array $columns, array $values): void
+    public function update(string $table, string $idColumn, int $id, array $columns, array $values): void
     {
-        $update = "UPDATE $table " . implode(", ", array_map(function ($column, $value) {
-            return $column . " = " . $value;
-        }, $columns, $values)) . " WHERE id = $id;";
+        $update = "UPDATE $table SET " . implode(", ", array_map(function ($column, $value) {
+            return $column . " = '" . $value . "'";
+        }, $columns, $values)) . " WHERE $idColumn = $id;";
         $this->pdo->exec($update);
     }
 
-    public function delete(string $table, int $id): void
+    public function delete(string $table, string $idColumn, int $id): void
     {
-        $delete = "DELETE FROM $table WHERE id = $id;";
+        $delete = "DELETE FROM $table WHERE $idColumn = $id;";
         $this->pdo->exec($delete);
+    }
+
+    public function where(string $where): QueryInterface
+    {
+        $this->queryElements["where"]["where"] = $where;
+        return $this;
     }
 
     public function andWhere(string $where): self
@@ -147,7 +155,6 @@ class Mysql extends AbstractDatabase implements QueryInterface
             }
 
             $columns[strlen($columns) - 2] = " ";
-            var_dump($columns);
             $this->pdo->exec("CREATE TABLE " . $objectData->getTableName() . " ($columns);");
         }
     }
@@ -165,16 +172,17 @@ class Mysql extends AbstractDatabase implements QueryInterface
         $query .= $this->expression->select($this->queryElements["select"]["columns"]);
         $query .= $this->expression->from($this->queryElements["from"]["table"], $this->queryElements["from"]["alias"]);
 
-        if (!empty($this->queryElements["where"]["and"]) || !empty($this->queryElements["where"]["or"])) {
+        if (!empty($this->queryElements["where"]["where"])) {
             $query .= $this->expression->where();
-        }
+            $query .= $this->queryElements["where"]["where"];
 
-        foreach ($this->queryElements["where"]["and"] as $and) {
-            $query .= $this->expression->and($query, $and);
-        }
+            foreach ($this->queryElements["where"]["and"] as $and) {
+                $query = $this->expression->and($query, $and);
+            }
 
-        foreach ($this->queryElements["where"]["or"] as $or) {
-            $query .= $this->expression->or($query, $or);
+            foreach ($this->queryElements["where"]["or"] as $or) {
+                $query = $this->expression->or($query, $or);
+            }
         }
 
         foreach ($this->queryElements["order"] as $column => $order) {
@@ -186,7 +194,7 @@ class Mysql extends AbstractDatabase implements QueryInterface
         }
 
         $this->query = $query . ";";
-        var_dump($query); // TODO: need to delete
+        var_dump($this->query); // TODO: need to delete
         return $this;
     }
 

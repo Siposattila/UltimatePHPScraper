@@ -4,4 +4,13 @@ use App\Scraper\TestScraper;
 
 require_once __DIR__ . "/../bootstrap.php";
 
-(new TestScraper)->scrape();
+$test = new TestScraper();
+$test->testSelect();
+
+//$test->testInsert();
+//$test->testInsert();
+//$test->testInsert();
+
+// $test->testUpdate();
+
+// $test->testDelete();

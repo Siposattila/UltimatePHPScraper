@@ -23,18 +23,19 @@ class TestRepository extends ObjectManager
     public function save(Test $entity): void
     {
         $this->persist($entity);
+        $this->flush();
     }
 
     public function delete(Test $entity): void
     {
         $this->remove($entity);
+        $this->flush();
     }
 
     public function queryBuilderTestSelect(): array
     {
-        return $this->databaseManager->createQueryBuilder()
-            ->andWhere("age = 18")
-            ->andWhere("year = 2001")
+        return $this->databaseManager->createQueryBuilder()->from("test")
+            ->where("age = 12")
             ->getQuery()
             ->execute();
     }

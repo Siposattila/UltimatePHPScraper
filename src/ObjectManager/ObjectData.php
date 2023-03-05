@@ -68,7 +68,10 @@ class ObjectData
         $properties = $this->reflectionClass->getProperties();
         foreach ($properties as $property) {
             if ($property->getName() == "id") {
-                return $property->getAttributes(Id::class)[0]->newInstance();
+                $id = $property->getAttributes(Id::class)[0]->newInstance();
+                $id->setIdColumn($property->getAttributes(Column::class)[0]->newInstance());
+
+                return $id;
             }
         }
 

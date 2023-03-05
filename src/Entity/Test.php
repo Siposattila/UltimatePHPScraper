@@ -4,16 +4,11 @@ namespace App\Entity;
 
 use App\Attribute\Column;
 use App\Attribute\Entity;
-use App\Attribute\Id;
 use App\Repository\TestRepository;
 
 #[Entity(repositoryClass: TestRepository::class)]
 class Test extends BaseEntity
 {
-    #[Id(generated: true)]
-    #[Column(columnName: "id", columnType: "integer")]
-    private ?int $id = null;
-
     #[Column(columnName: "name", columnType: "string")]
     private ?string $name = null;
 
@@ -22,17 +17,6 @@ class Test extends BaseEntity
 
     #[Column(columnName: "year", columnType: "string")]
     private ?string $year = null;
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function setId(?int $id): self
-    {
-        $this->id = $id;
-        return $this;
-    }
 
     public function getName(): ?string
     {
